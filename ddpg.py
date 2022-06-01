@@ -139,8 +139,8 @@ class DDPGTrainer(Trainer):
         self.experience_list = deque(maxlen=self.buffer_size)
 
     def train(self, env, agent, max_episodes):
-        agent.min_action = env.action_space.low[0]
-        agent.max_action = env.action_space.high[0]
+        agent.min_action = env.action_space.low
+        agent.max_action = env.action_space.high
         agent.action_space = list(env.action_space.shape)
         agent.random_action = env.action_space.sample
         reward_hist = super().train(env, agent, max_episodes)

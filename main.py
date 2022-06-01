@@ -1,6 +1,7 @@
 import argparse
 import matplotlib.pyplot as plt
 from ddpg import DDPG, DDPGTrainer
+from environment import Environment
 
 
 # params
@@ -55,9 +56,10 @@ def main(args):
     else:
         if args.test:
             import gym      # noqa
-            env = gym.make("Pendulum-v1")
+            # env = gym.make("Pendulum-v1")
+            env = gym.make("BipedalWalker-v3")
         else:
-            env = gym.make("Pendulum-v1")
+            env = Environment(course_layout_filepath)
 
         trained_agent, reward_hist = trainer.train(
             env, agent, max_episodes
