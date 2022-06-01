@@ -1,0 +1,5 @@
+__pycache__
+env?
+*.h5
+*.png
+memo.md
