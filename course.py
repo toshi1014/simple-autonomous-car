@@ -22,5 +22,8 @@ class Course:
             self.goal_area["y"]["max"]
         )
 
+    def apply_track_limit(self, position):
+        return position
+
 
 course = Course("course_layout.json")
