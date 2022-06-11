@@ -116,15 +116,20 @@ class DDPG(Agent):
     def update_target_model(self):
 
         def target_trans_func(w, target_w):
-            return w * self.target_trans_rate + target_w * (1 - self.target_trans_rate)
+            return w * self.target_trans_rate + \
+                target_w * (1 - self.target_trans_rate)
 
         new_target_actor_weight = [
             target_trans_func(w, target_w)
-            for w, target_w in zip(self.actor.weights, self.target_actor.weights)
+            for w, target_w in zip(
+                self.actor.weights, self.target_actor.weights
+            )
         ]
         new_target_critic_weight = [
             target_trans_func(w, target_w)
-            for w, target_w in zip(self.critic.weights, self.target_critic.weights)
+            for w, target_w in zip(
+                self.critic.weights, self.target_critic.weights
+            )
         ]
 
         self.target_actor.set_weights(new_target_actor_weight)
