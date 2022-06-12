@@ -1,5 +1,6 @@
 import copy
 import json
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from course import Course
@@ -109,12 +110,12 @@ class Environment:
 
         self.reset()
 
-        # add history
-        self.position_hist = [copy.deepcopy(self.car_model.position)]
-        self.speed_hist = [self.car_model.speed]
-        self.steering_hist = []
-        self.throttle_hist = []
-        self.brake_hist = []
+        # logs
+        self.position_log = [copy.deepcopy(self.car_model.position)]
+        self.speed_log = [self.car_model.speed]
+        self.steering_log = []
+        self.throttle_log = []
+        self.brake_log = []
 
     # wall position & speed
     def state_repr(self):
@@ -137,12 +138,12 @@ class Environment:
         done = not bool(position_reward)
         info = None
 
-        # add history
-        self.position_hist.append(copy.deepcopy(self.car_model.position))
-        self.speed_hist.append(self.car_model.speed)
-        self.steering_hist.append(steering)
-        self.throttle_hist.append(throttle)
-        self.brake_hist.append(brake)
+        # add into logs
+        self.position_log.append(copy.deepcopy(self.car_model.position))
+        self.speed_log.append(self.car_model.speed)
+        self.steering_log.append(steering)
+        self.throttle_log.append(throttle)
+        self.brake_log.append(brake)
 
         return self.state_repr(), reward, done, info
 
@@ -161,42 +162,53 @@ class Environment:
         return ax
 
     def render(self):
+        # save logs
+        with open("logs.pickle", "wb") as f:
+            obj = {
+                "position_log": self.position_log,
+                "speed_log": self.speed_log,
+                "steering_log": self.steering_log,
+                "throttle_log": self.throttle_log,
+                "brake_log": self.brake_log,
+            }
+            pickle.dump(obj, f)
+
         fig = plt.figure()
 
-        # position history
+        # position log
         ax1 = fig.add_subplot(2, 2, 1)
         ax1 = self.draw_course(ax1)
-        x_list = [p["x"] for p in self.position_hist]
-        y_list = [p["y"] for p in self.position_hist]
+        x_list = [p["x"] for p in self.position_log]
+        y_list = [p["y"] for p in self.position_log]
         ax1.plot(x_list, y_list, marker="o")
         ax1.set_title("Position")
         ax1.set_aspect("equal")
 
-        # speed history
+        # speed log
         ax2 = fig.add_subplot(2, 2, 2)
-        ax2.plot(list(range(len(self.speed_hist))), self.speed_hist)
+        ax2.plot(list(range(len(self.speed_log))), self.speed_log)
         ax2.set_title("Speed")
 
-        # steering history
+        # steering log
         ax3 = fig.add_subplot(2, 2, 3)
-        ax3.plot(list(range(len(self.steering_hist))), self.steering_hist)
-        ax3.hlines(0, 0, len(self.steering_hist), color="k", linestyle="--")
-        ax3.hlines(1, 0, len(self.steering_hist), color="k", linestyle="-")
-        ax3.hlines(-1, 0, len(self.steering_hist), color="k", linestyle="-")
+        ax3.plot(list(range(len(self.steering_log))), self.steering_log)
+        ax3.hlines(0, 0, len(self.steering_log), color="k", linestyle="--")
+        ax3.hlines(1, 0, len(self.steering_log), color="k", linestyle="-")
+        ax3.hlines(-1, 0, len(self.steering_log), color="k", linestyle="-")
         ax3.set_title("Steering")
 
-        # throttle & brake history
+        # throttle & brake log
         ax4 = fig.add_subplot(2, 2, 4)
         ax4.plot(
-            list(range(len(self.throttle_hist))), self.throttle_hist,
+            list(range(len(self.throttle_log))), self.throttle_log,
             label="Throttle", color="red"
         )
         ax4.plot(
-            list(range(len(self.brake_hist))), self.brake_hist,
+            list(range(len(self.brake_log))), self.brake_log,
             label="Brake", color="blue"
         )
-        ax4.hlines(0, 0, len(self.steering_hist), color="k", linestyle="-")
-        ax4.hlines(1, 0, len(self.steering_hist), color="k", linestyle="-")
+        ax4.hlines(0, 0, len(self.steering_log), color="k", linestyle="-")
+        ax4.hlines(1, 0, len(self.steering_log), color="k", linestyle="-")
         ax4.set_title("Throttle & Brake")
         ax4.legend(loc="best", prop={"size": 6})
 
