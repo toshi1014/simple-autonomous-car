@@ -3,13 +3,25 @@
         "x": 0,
         "y": 0
     },
+    "off_limits_areas": [
+        {
+            "x": {
+                "min": -0.5,
+                "max": 0.5
+            },
+            "y": {
+                "min": "-inf",
+                "max": -0.1
+            }
+        }
+    ],
     "goal_area": {
         "x": {
             "min": 3.5,
             "max": 4.5
         },
         "y": {
-            "min": -1,
+            "min": "-inf",
             "max": 0
         }
     },

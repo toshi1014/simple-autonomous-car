@@ -13,7 +13,6 @@ class Course:
             self.course_layout_dict = json.load(f)
 
         self.initial_position = self.course_layout_dict["initial_position"]
-        self.goal_area = self.course_layout_dict["goal_area"]
         self.parse_course_layout()
 
     # get line written by two points
@@ -58,16 +57,19 @@ class Course:
     def within_range(self, min, target, max):
         return min <= target <= max
 
-    def is_goal(self, position):
+    def in_area(self, position, area):
         return self.within_range(
-            self.goal_area["x"]["min"],
+            float(area["x"]["min"]),
             position["x"],
-            self.goal_area["x"]["max"]
+            float(area["x"]["max"])
         ) & self.within_range(
-            self.goal_area["y"]["min"],
+            float(area["y"]["min"]),
             position["y"],
-            self.goal_area["y"]["max"]
+            float(area["y"]["max"])
         )
+
+    def is_goal(self, position):
+        return self.in_area(position, self.course_layout_dict["goal_area"])
 
     def does_collide(self, intersection, pre_p, p):
         min_x = min(pre_p["x"], p["x"])
@@ -86,7 +88,16 @@ class Course:
             max_y,
         )
 
+    def in_off_limits_area(self, position):
+        for off_limits_area in self.course_layout_dict["off_limits_areas"]:
+            if self.in_area(position, off_limits_area):
+                return True
+        return False
+
     def apply_track_limit(self, pre_position, position):
+        if self.in_off_limits_area(position):
+            return position, True
+
         move_eqn = self.get_line_eqn(pre_position, position)
 
         distance_list = []
@@ -187,6 +198,6 @@ class Course:
 if __name__ == "__main__":
     course_layout_filepath = "course_layout.json"
     course = Course(course_layout_filepath)
-    position = {"x": 1/np.sqrt(2), "y": 1+1/np.sqrt(2)}
-    sensor_direction = 0
-    print(course.get_wall_distance(position, sensor_direction))
+    position = {"x": 0.5, "y": -1}
+
+    print(course.in_off_limits_area(position))

@@ -159,26 +159,17 @@ class Environment:
         return self.state_repr(), reward, done, info
 
     def draw_course(self, ax):
-        left_wall_x_list = [
-            w["x"]
+        left_wall_xy_list = np.array([
+            [w["x"], w["y"]]
             for w in self.course.course_layout_dict["course"]["left_wall"]
-        ]
-        left_wall_y_list = [
-            w["y"]
-            for w in self.course.course_layout_dict["course"]["left_wall"]
-        ]
-
-        right_wall_x_list = [
-            w["x"]
+        ])
+        right_wall_xy_list = np.array([
+            [w["x"], w["y"]]
             for w in self.course.course_layout_dict["course"]["right_wall"]
-        ]
-        right_wall_y_list = [
-            w["y"]
-            for w in self.course.course_layout_dict["course"]["right_wall"]
-        ]
+        ])
 
-        ax.plot(left_wall_x_list, left_wall_y_list, color="k")
-        ax.plot(right_wall_x_list, right_wall_y_list, color="k")
+        ax.plot(left_wall_xy_list[:, 0], left_wall_xy_list[:, 1], color="k")
+        ax.plot(right_wall_xy_list[:, 0], right_wall_xy_list[:, 1], color="k")
         return ax
 
     def render(self):
@@ -201,6 +192,9 @@ class Environment:
         # steering history
         ax3 = fig.add_subplot(2, 2, 3)
         ax3.plot(list(range(len(self.steering_hist))), self.steering_hist)
+        ax3.hlines(0, 0, len(self.steering_hist), color="k", linestyle="--")
+        ax3.hlines(1, 0, len(self.steering_hist), color="k", linestyle="-")
+        ax3.hlines(-1, 0, len(self.steering_hist), color="k", linestyle="-")
         ax3.set_title("Steerings")
 
         # throttle & brake history
@@ -213,6 +207,8 @@ class Environment:
             list(range(len(self.brake_hist))), self.brake_hist,
             label="Brake", color="blue"
         )
+        ax4.hlines(0, 0, len(self.steering_hist), color="k", linestyle="-")
+        ax4.hlines(1, 0, len(self.steering_hist), color="k", linestyle="-")
         ax4.set_title("Throttle & brake")
         ax4.legend(loc="best")
 
@@ -230,25 +226,15 @@ if __name__ == '__main__':
     position_x_list = [env.car_model.position["x"]]
     position_y_list = [env.car_model.position["y"]]
 
-    action_list = [
-        [0, 1, 0],
-        [-np.pi/4, 0, 0],
-        [-np.pi/3, 1, 0],
-        [-np.pi/4, 1, 0],
-        [0, 1, 0],
-    ]
-
     while True:
         action = env.action_space.sample()
         next_state, reward, done, info = env.step(np.array(action))
-        print(env.car_model.position)
-        print(next_state, "\n")
+        print(action)
         position_x_list.append(env.car_model.position["x"])
         position_y_list.append(env.car_model.position["y"])
         speed_list.append(next_state[-1])
 
         if done:
-            print("done")
             print(env.car_model.position)
             break
     env.render()
