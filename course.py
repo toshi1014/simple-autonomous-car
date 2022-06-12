@@ -1,7 +1,6 @@
 from collections import namedtuple
 import copy
 import json
-import pdb
 import numpy as np
 
 
@@ -11,11 +10,11 @@ LineEqn = namedtuple("LineEqn", ["a", "b", "c"])
 class Course:
     def __init__(self, course_layout_filepath):
         with open(course_layout_filepath, "r") as f:
-            course_layout_dict = json.load(f)
+            self.course_layout_dict = json.load(f)
 
-        self.initial_position = course_layout_dict["initial_position"]
-        self.goal_area = course_layout_dict["goal_area"]
-        self.parse_course_layout(course_layout_dict)
+        self.initial_position = self.course_layout_dict["initial_position"]
+        self.goal_area = self.course_layout_dict["goal_area"]
+        self.parse_course_layout()
 
     # get line written by two points
     def get_line_eqn(self, p1, p2):
@@ -41,7 +40,7 @@ class Course:
             c = - a * position["x"] + position["y"]
             return LineEqn(a, -1, c)
 
-    def parse_course_layout(self, course_layout_dict):
+    def parse_course_layout(self):
         self.left_wall_list = []
         self.right_wall_list = []
 
@@ -49,7 +48,7 @@ class Course:
             ["left_wall", self.left_wall_list],
             ["right_wall", self.right_wall_list],
         ]:
-            wall = course_layout_dict["course"][str_lf_wall]
+            wall = self.course_layout_dict["course"][str_lf_wall]
             for i in range(len(wall)-1):
                 lf_wall_list.append({
                     "range": [wall[i], wall[i+1]],

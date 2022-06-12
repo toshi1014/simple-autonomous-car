@@ -1,4 +1,5 @@
 import copy
+import matplotlib.pyplot as plt
 import numpy as np
 from course import Course
 
@@ -65,7 +66,7 @@ class CarModel:
         self.position["x"] += self.speed * np.cos(self.direction)
         self.position["y"] += self.speed * np.sin(self.direction)
 
-        _, bool_off_limits = self.course.apply_track_limit(
+        self.position, bool_off_limits = self.course.apply_track_limit(
             pre_position, self.position
         )
 
@@ -115,6 +116,13 @@ class Environment:
 
         self.reset()
 
+        # add history
+        self.position_hist = [copy.deepcopy(self.car_model.position)]
+        self.speed_hist = [self.car_model.speed]
+        self.steering_hist = []
+        self.throttle_hist = []
+        self.brake_hist = []
+
     # wall position & speed
     def state_repr(self):
         return np.concatenate(
@@ -123,7 +131,6 @@ class Environment:
         )
 
     def reset(self):
-        self.position = self.initial_position
         initial_direction = np.pi / 2
         self.car_model = CarModel(
             self.course,
@@ -131,7 +138,6 @@ class Environment:
             initial_direction,
         )
         return self.state_repr()
-        # return initial state
 
     def step(self, action):
         steering, throttle, brake = action
@@ -143,20 +149,78 @@ class Environment:
         done = not bool(position_reward)
         info = None
 
+        # add history
+        self.position_hist.append(copy.deepcopy(self.car_model.position))
+        self.speed_hist.append(self.car_model.speed)
+        self.steering_hist.append(steering)
+        self.throttle_hist.append(throttle)
+        self.brake_hist.append(brake)
+
         return self.state_repr(), reward, done, info
-        # return next_state, reward, done, info
+
+    def draw_course(self, ax):
+        left_wall_x_list = [
+            w["x"]
+            for w in self.course.course_layout_dict["course"]["left_wall"]
+        ]
+        left_wall_y_list = [
+            w["y"]
+            for w in self.course.course_layout_dict["course"]["left_wall"]
+        ]
+
+        right_wall_x_list = [
+            w["x"]
+            for w in self.course.course_layout_dict["course"]["right_wall"]
+        ]
+        right_wall_y_list = [
+            w["y"]
+            for w in self.course.course_layout_dict["course"]["right_wall"]
+        ]
+
+        ax.plot(left_wall_x_list, left_wall_y_list, color="k")
+        ax.plot(right_wall_x_list, right_wall_y_list, color="k")
+        return ax
 
     def render(self):
-        ...
+        fig = plt.figure()
+
+        # position history
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax1 = self.draw_course(ax1)
+        x_list = [p["x"] for p in self.position_hist]
+        y_list = [p["y"] for p in self.position_hist]
+        ax1.plot(x_list, y_list, marker="o")
+        ax1.set_title("Positions")
+        ax1.set_aspect("equal")
+
+        # speed history
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax2.plot(list(range(len(self.speed_hist))), self.speed_hist)
+        ax2.set_title("Speeds")
+
+        # steering history
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax3.plot(list(range(len(self.steering_hist))), self.steering_hist)
+        ax3.set_title("Steerings")
+
+        # throttle & brake history
+        ax4 = fig.add_subplot(2, 2, 4)
+        ax4.plot(
+            list(range(len(self.throttle_hist))), self.throttle_hist,
+            label="Throttle", color="red"
+        )
+        ax4.plot(
+            list(range(len(self.brake_hist))), self.brake_hist,
+            label="Brake", color="blue"
+        )
+        ax4.set_title("Throttle & brake")
+        ax4.legend(loc="best")
+
+        plt.subplots_adjust(hspace=0.3)
+        plt.savefig("out.png")
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-
-    fig = plt.figure()
-    ax1 = fig.add_subplot(1, 2, 1)
-    ax2 = fig.add_subplot(1, 2, 2)
-
     course_layout_filepath = "course_layout.json"
     env = Environment(course_layout_filepath)
 
@@ -169,14 +233,13 @@ if __name__ == '__main__':
     action_list = [
         [0, 1, 0],
         [-np.pi/4, 0, 0],
-        # [-np.pi/3, 1, 0],
+        [-np.pi/3, 1, 0],
         [-np.pi/4, 1, 0],
-        [0, 1, 0],
         [0, 1, 0],
     ]
 
-    for action in action_list:
-        # action = env.action_space.sample()
+    while True:
+        action = env.action_space.sample()
         next_state, reward, done, info = env.step(np.array(action))
         print(env.car_model.position)
         print(next_state, "\n")
@@ -185,13 +248,7 @@ if __name__ == '__main__':
         speed_list.append(next_state[-1])
 
         if done:
+            print("done")
+            print(env.car_model.position)
             break
-
-    ax1.plot(position_x_list, position_y_list, marker="o")
-    ax2.plot(list(range(len(speed_list))), speed_list, marker="o")
-    ax1.set_title("Positions")
-    ax2.set_title("Speeds")
-    ax1.set_aspect("equal")
-    ax2.set_aspect("equal")
-
-    plt.savefig("out.png")
+    env.render()
