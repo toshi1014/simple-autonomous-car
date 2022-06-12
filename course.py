@@ -1,5 +1,7 @@
 from collections import namedtuple
+import copy
 import json
+import pdb
 import numpy as np
 
 
@@ -15,7 +17,7 @@ class Course:
         self.goal_area = course_layout_dict["goal_area"]
         self.parse_course_layout(course_layout_dict)
 
-    # get line written by p1 & p2
+    # get line written by two points
     def get_line_eqn(self, p1, p2):
         vec_x = p2["x"] - p1["x"]
         vec_y = p2["y"] - p1["y"]
@@ -29,13 +31,13 @@ class Course:
             c = - a * p1["x"] + p1["y"]
             return LineEqn(a, -1, c)
 
-    def get_line_eqn2(self, position, sensor_direction):
-        if sensor_direction in [0, np.pi]:
+    def get_line_eqn2(self, position, vec):
+        if vec in [0, np.pi]:
             return LineEqn(0, 1, -position["y"])
-        elif sensor_direction in [np.pi/2, np.pi*3/4]:
+        elif vec in [np.pi/2, np.pi*3/2]:
             return LineEqn(1, 0, -position["x"])
         else:
-            a = np.tan(sensor_direction)
+            a = np.tan(vec)
             c = - a * position["x"] + position["y"]
             return LineEqn(a, -1, c)
 
@@ -68,18 +70,80 @@ class Course:
             self.goal_area["y"]["max"]
         )
 
+    def does_collide(self, intersection, pre_p, p):
+        min_x = min(pre_p["x"], p["x"])
+        max_x = max(pre_p["x"], p["x"])
+
+        min_y = min(pre_p["y"], p["y"])
+        max_y = max(pre_p["y"], p["y"])
+
+        return self.within_range(
+            min_x,
+            intersection["x"],
+            max_x,
+        ) & self.within_range(
+            min_y,
+            intersection["y"],
+            max_y,
+        )
+
     def apply_track_limit(self, pre_position, position):
-        return position
+        move_eqn = self.get_line_eqn(pre_position, position)
+
+        distance_list = []
+        intersection_list = []
+
+        for lf_wall_list in [self.left_wall_list, self.right_wall_list]:
+            for wall in lf_wall_list:
+                intersection = self.get_intersection(
+                    move_eqn, wall["eqn"]
+                )
+
+                if intersection:
+                    if self.does_collide(
+                        intersection, pre_position, position
+                    ) & self.in_wall_range(intersection, wall["range"]):
+                        distance_list.append(
+                            self.get_distance(intersection, position)
+                        )
+                        intersection_list.append(intersection)
+
+        if len(distance_list) == 0:
+            return position, False
+        else:
+            min_distance_idx = distance_list.index(min(distance_list))
+            return intersection_list[min_distance_idx], True
+
+    # check whether intersection is forward
+    def is_forward_wall(self, intersection, position, sensor_direction):
+        p1 = copy.deepcopy(position)
+        p1["x"] += np.cos(sensor_direction)
+        p1["y"] += np.sin(sensor_direction)
+
+        p2 = copy.deepcopy(position)
+        p2["x"] -= np.cos(sensor_direction)
+        p2["y"] -= np.sin(sensor_direction)
+
+        return bool(
+            self.get_distance(p1, intersection) <
+            self.get_distance(p2, intersection)
+        )
 
     def in_wall_range(self, intersection, wall_range):
+        min_x = min(wall_range[0]["x"], wall_range[1]["x"])
+        max_x = max(wall_range[0]["x"], wall_range[1]["x"])
+
+        min_y = min(wall_range[0]["y"], wall_range[1]["y"])
+        max_y = max(wall_range[0]["y"], wall_range[1]["y"])
+
         return self.within_range(
-            wall_range[0]["x"],
+            min_x,
             intersection["x"],
-            wall_range[1]["x"],
+            max_x,
         ) & self.within_range(
-            wall_range[0]["y"],
+            min_y,
             intersection["y"],
-            wall_range[1]["y"],
+            max_y,
         )
 
     def get_intersection(self, line1, line2):
@@ -108,7 +172,9 @@ class Course:
                 )
 
                 if intersection:
-                    if self.in_wall_range(intersection, wall["range"]):
+                    if self.is_forward_wall(
+                        intersection, position, sensor_direction
+                    ) & self.in_wall_range(intersection, wall["range"]):
                         distance_list.append(
                             self.get_distance(intersection, position)
                         )
@@ -117,3 +183,11 @@ class Course:
             return float("inf")
         else:
             return min(distance_list)
+
+
+if __name__ == "__main__":
+    course_layout_filepath = "course_layout.json"
+    course = Course(course_layout_filepath)
+    position = {"x": 1/np.sqrt(2), "y": 1+1/np.sqrt(2)}
+    sensor_direction = 0
+    print(course.get_wall_distance(position, sensor_direction))
