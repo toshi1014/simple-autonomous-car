@@ -1,12 +1,8 @@
 import copy
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 from course import Course
-
-
-MAX_STEERING_ANGLE = np.pi / 6
-ACCELERATION_G = 1
-DECELERATION_G = 3
 
 
 class ActionSpace:
@@ -30,41 +26,38 @@ class ActionSpace:
 
 
 class CarModel:
-    def __init__(self, course, initial_position, initial_direction):
-        # FIXME: car model params
+    def __init__(self, course, config_filepath):
+        with open(config_filepath, "r") as f:
+            self.car_model_config = json.load(f)
+
         self.course = course
-        self.position = initial_position
-        self.speed = 0
-        self.direction = initial_direction
-        self.sensor_direction_list = [-np.pi/4, 0, np.pi/4]
-        self.lidar_range = 3
-        self.car_direction = np.pi/2
+        self.position = self.course.course_layout_dict["initial_position"]
+        self.car_direction = np.deg2rad(
+            self.course.course_layout_dict["initial_direction"]
+        )
+        self.max_steering_angle = np.deg2rad(
+            self.car_model_config["max_steering_angle"]
+        )
+
+        self.speed = 0      # TODO: random initial speed
+        self.sensor_direction_list = [
+            np.deg2rad(sd)
+            for sd in self.car_model_config["sensor_directions"]
+        ]
 
     def get_steering_angle(self, steering):
-        return steering * MAX_STEERING_ANGLE
-
-    def get_car_direction(self, pre_position, position):
-        vec_x = position["x"] - pre_position["x"]
-        vec_y = position["y"] - pre_position["y"]
-
-        if vec_x == 0:
-            if vec_y > 0:
-                return np.pi / 2
-            else:
-                return np.pi * 3 / 2
-        else:
-            return np.arctan(vec_y / vec_x)
+        return steering  # * self.max_steering_angle
 
     # if steering > 0, then turn left
     def update_position(self, steering):
         if self.speed != 0:
             steering_angle = self.get_steering_angle(steering)
-            self.direction += steering_angle
+            self.car_direction += steering_angle
 
             pre_position = copy.deepcopy(self.position)
 
-            self.position["x"] += self.speed * np.cos(self.direction)
-            self.position["y"] += self.speed * np.sin(self.direction)
+            self.position["x"] += self.speed * np.cos(self.car_direction)
+            self.position["y"] += self.speed * np.sin(self.car_direction)
 
             self.position, bool_off_limits = self.course.apply_track_limit(
                 pre_position, self.position
@@ -73,16 +66,14 @@ class CarModel:
             if bool_off_limits:
                 return False
 
-            self.car_direction = self.get_car_direction(
-                pre_position, self.position
-            )
-
+        # TODO: add reward
             return 1
         else:
             return 1
 
     def update_speed(self, throttle, brake):
-        self.speed += throttle * ACCELERATION_G - brake * DECELERATION_G
+        self.speed += throttle * self.car_model_config["acceleration_g"] \
+            - brake * self.car_model_config["deceleration_g"]
 
         self.speed = max(self.speed, 0)
 
@@ -99,7 +90,9 @@ class CarModel:
                 self.position,
                 sensor_direction_now,
             )
-            wall_distance_list.append(min(wall_distance, self.lidar_range))
+            wall_distance_list.append(
+                min(wall_distance, self.car_model_config["lidar_range"])
+            )
 
         return wall_distance_list
 
@@ -113,8 +106,6 @@ class Environment:
         ])
 
         self.course = Course(course_layout_filepath)
-
-        self.initial_position = self.course.initial_position
 
         self.reset()
 
@@ -133,12 +124,7 @@ class Environment:
         )
 
     def reset(self):
-        initial_direction = np.pi / 2
-        self.car_model = CarModel(
-            self.course,
-            self.initial_position,
-            initial_direction,
-        )
+        self.car_model = CarModel(self.course, "car_model_config.json")
         return self.state_repr()
 
     def step(self, action):

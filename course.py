@@ -4,6 +4,7 @@ import json
 import numpy as np
 
 
+# ax + by + c = 0
 LineEqn = namedtuple("LineEqn", ["a", "b", "c"])
 
 
@@ -12,7 +13,6 @@ class Course:
         with open(course_layout_filepath, "r") as f:
             self.course_layout_dict = json.load(f)
 
-        self.initial_position = self.course_layout_dict["initial_position"]
         self.parse_course_layout()
 
     # get line written by two points

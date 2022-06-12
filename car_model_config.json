@@ -1,0 +1,11 @@
+{
+    "max_steering_angle": 60,
+    "acceleration_g": 1,
+    "deceleration_g": 1,
+    "lidar_range": 3,
+    "sensor_directions": [
+        -45,
+        0,
+        45
+    ]
+}

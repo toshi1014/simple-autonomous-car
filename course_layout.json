@@ -3,6 +3,7 @@
         "x": 0,
         "y": 0
     },
+    "initial_direction": 90,
     "off_limits_areas": [
         {
             "x": {
