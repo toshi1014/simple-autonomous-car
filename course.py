@@ -114,7 +114,7 @@ class Course:
                         intersection, pre_position, position
                     ) & self.in_wall_range(intersection, wall["range"]):
                         distance_list.append(
-                            self.get_distance(intersection, position)
+                            self.get_distance(intersection, pre_position)
                         )
                         intersection_list.append(intersection)
 

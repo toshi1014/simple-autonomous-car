@@ -6,12 +6,12 @@
     "off_limits_areas": [
         {
             "x": {
-                "min": -0.5,
-                "max": 0.5
+                "min": "-inf",
+                "max": 3
             },
             "y": {
                 "min": "-inf",
-                "max": -0.1
+                "max": -0.01
             }
         }
     ],

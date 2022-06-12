@@ -41,8 +41,7 @@ class CarModel:
         self.car_direction = np.pi/2
 
     def get_steering_angle(self, steering):
-        # TEMP: steering angle
-        return steering  # * MAX_STEERING_ANGLE
+        return steering * MAX_STEERING_ANGLE
 
     def get_car_direction(self, pre_position, position):
         vec_x = position["x"] - pre_position["x"]
@@ -58,26 +57,29 @@ class CarModel:
 
     # if steering > 0, then turn left
     def update_position(self, steering):
-        steering_angle = self.get_steering_angle(steering)
-        self.direction += steering_angle
+        if self.speed != 0:
+            steering_angle = self.get_steering_angle(steering)
+            self.direction += steering_angle
 
-        pre_position = copy.deepcopy(self.position)
+            pre_position = copy.deepcopy(self.position)
 
-        self.position["x"] += self.speed * np.cos(self.direction)
-        self.position["y"] += self.speed * np.sin(self.direction)
+            self.position["x"] += self.speed * np.cos(self.direction)
+            self.position["y"] += self.speed * np.sin(self.direction)
 
-        self.position, bool_off_limits = self.course.apply_track_limit(
-            pre_position, self.position
-        )
+            self.position, bool_off_limits = self.course.apply_track_limit(
+                pre_position, self.position
+            )
 
-        if bool_off_limits:
-            return False
+            if bool_off_limits:
+                return False
 
-        self.car_direction = self.get_car_direction(
-            pre_position, self.position
-        )
+            self.car_direction = self.get_car_direction(
+                pre_position, self.position
+            )
 
-        return 1
+            return 1
+        else:
+            return 1
 
     def update_speed(self, throttle, brake):
         self.speed += throttle * ACCELERATION_G - brake * DECELERATION_G
@@ -181,13 +183,13 @@ class Environment:
         x_list = [p["x"] for p in self.position_hist]
         y_list = [p["y"] for p in self.position_hist]
         ax1.plot(x_list, y_list, marker="o")
-        ax1.set_title("Positions")
+        ax1.set_title("Position")
         ax1.set_aspect("equal")
 
         # speed history
         ax2 = fig.add_subplot(2, 2, 2)
         ax2.plot(list(range(len(self.speed_hist))), self.speed_hist)
-        ax2.set_title("Speeds")
+        ax2.set_title("Speed")
 
         # steering history
         ax3 = fig.add_subplot(2, 2, 3)
@@ -195,7 +197,7 @@ class Environment:
         ax3.hlines(0, 0, len(self.steering_hist), color="k", linestyle="--")
         ax3.hlines(1, 0, len(self.steering_hist), color="k", linestyle="-")
         ax3.hlines(-1, 0, len(self.steering_hist), color="k", linestyle="-")
-        ax3.set_title("Steerings")
+        ax3.set_title("Steering")
 
         # throttle & brake history
         ax4 = fig.add_subplot(2, 2, 4)
@@ -209,11 +211,11 @@ class Environment:
         )
         ax4.hlines(0, 0, len(self.steering_hist), color="k", linestyle="-")
         ax4.hlines(1, 0, len(self.steering_hist), color="k", linestyle="-")
-        ax4.set_title("Throttle & brake")
-        ax4.legend(loc="best")
+        ax4.set_title("Throttle & Brake")
+        ax4.legend(loc="best", prop={"size": 6})
 
         plt.subplots_adjust(hspace=0.3)
-        plt.savefig("out.png")
+        plt.savefig("out.png", bbox_inches="tight", pad_inches=0.1)
 
 
 if __name__ == '__main__':
