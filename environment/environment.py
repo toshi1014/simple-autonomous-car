@@ -1,9 +1,10 @@
 import copy
 import json
+import os
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
-from course import Course
+from .course import Course
 
 
 class ActionSpace:
@@ -27,8 +28,8 @@ class ActionSpace:
 
 
 class CarModel:
-    def __init__(self, course, config_filepath):
-        with open(config_filepath, "r") as f:
+    def __init__(self, course, car_model_config_filepath):
+        with open(car_model_config_filepath, "r") as f:
             self.car_model_config = json.load(f)
 
         self.course = course
@@ -47,7 +48,7 @@ class CarModel:
         ]
 
     def get_steering_angle(self, steering):
-        return steering  # * self.max_steering_angle
+        return steering * self.max_steering_angle
 
     # if steering > 0, then turn left
     def update_position(self, steering):
@@ -60,17 +61,15 @@ class CarModel:
             self.position["x"] += self.speed * np.cos(self.car_direction)
             self.position["y"] += self.speed * np.sin(self.car_direction)
 
-            self.position, bool_off_limits = self.course.apply_track_limit(
-                pre_position, self.position
-            )
+            self.position, bool_off_limits, bool_goal = \
+                self.course.apply_track_limits(
+                    pre_position, self.position
+                )
 
-            if bool_off_limits:
-                return False
+            return bool_off_limits, bool_goal
 
-        # TODO: add reward
-            return 1
         else:
-            return 1
+            return False, False
 
     def update_speed(self, throttle, brake):
         self.speed += throttle * self.car_model_config["acceleration_g"] \
@@ -78,9 +77,7 @@ class CarModel:
 
         self.speed = max(self.speed, 0)
 
-        # TODO: add simul throttle & brake penalty
-
-        return 1
+        return bool((throttle * brake) > 0)
 
     def lidar_detection(self):
         wall_distance_list = []
@@ -99,14 +96,21 @@ class CarModel:
 
 
 class Environment:
-    def __init__(self, course_layout_filepath):
+    def __init__(
+        self, course_layout_filepath,
+        car_model_config_filepath, reward_config_filepath,
+    ):
+        self.car_model_config_filepath = car_model_config_filepath
+        self.course = Course(course_layout_filepath)
+
+        with open(reward_config_filepath, "r") as f:
+            self.reward_config = json.load(f)
+
         self.action_space = ActionSpace([
             {"low": -1, "high": 1},     # steering
             {"low": 0, "high": 1},      # throttle
             {"low": 0, "high": 1},      # brake
         ])
-
-        self.course = Course(course_layout_filepath)
 
         self.reset()
 
@@ -125,17 +129,26 @@ class Environment:
         )
 
     def reset(self):
-        self.car_model = CarModel(self.course, "car_model_config.json")
+        self.car_model = CarModel(self.course, self.car_model_config_filepath)
         return self.state_repr()
 
     def step(self, action):
         steering, throttle, brake = action
 
-        pedal_reward = self.car_model.update_speed(throttle, brake)
-        position_reward = self.car_model.update_position(steering)
+        bool_throttle_with_brake = self.car_model.update_speed(throttle, brake)
+        bool_off_limits, bool_goal = self.car_model.update_position(steering)
 
-        reward = position_reward + pedal_reward
-        done = not bool(position_reward)
+        if bool_goal:
+            reward = self.reward_config["goal_reward"]
+        else:
+            if bool_off_limits:
+                reward = self.reward_config["off_limits_penalty"]
+            elif bool_throttle_with_brake:
+                reward = self.reward_config["throttle_with_brake_penalty"]
+            else:
+                reward = self.reward_config["default_reward"]
+
+        done = bool_off_limits | bool_goal
         info = None
 
         # add into logs
@@ -218,7 +231,14 @@ class Environment:
 
 if __name__ == '__main__':
     course_layout_filepath = "course_layout.json"
-    env = Environment(course_layout_filepath)
+    config_dir = "config"
+    car_model_config_filepath = "car_model_config.json"
+    reward_config_filepath = "reward_config.json"
+    env = Environment(
+        course_layout_filepath,
+        os.path.join(config_dir, car_model_config_filepath),
+        os.path.join(config_dir, reward_config_filepath),
+    )
 
     state = env.reset()
 
