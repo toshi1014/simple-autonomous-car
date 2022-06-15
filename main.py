@@ -1,8 +1,12 @@
 import argparse
 import matplotlib.pyplot as plt
-from ddpg import DDPG, DDPGTrainer
+from agent import Agent, Trainer
 from environment import Environment
 
+
+COURSE_LAYOUT_FILEPATH = "course_layout.json"
+CAR_MODEL_CONFIG_FILEPATH = "config/car_model_config.json"
+REWARD_CONFIG_FILEPATH = "config/reward_config.json"
 
 # params
 discount_rate = 0.99
@@ -13,17 +17,17 @@ batch_size = 64
 noise_stddev = 0.1
 target_trans_rate = 0.005
 model_path = "model.h5"
-max_episodes = 20
+max_episodes = 50
 # end params
 
 
-trainer = DDPGTrainer(
+trainer = Trainer(
     discount_rate=discount_rate,
     buffer_size=buffer_size,
     batch_size=batch_size,
 )
 
-agent = DDPG(
+agent = Agent(
     actor_learning_rate=actor_learning_rate,
     critic_learning_rate=critic_learning_rate,
     noise_stddev=noise_stddev,
@@ -49,6 +53,12 @@ def get_args():
 
 
 def main(args):
+    env = Environment(
+        COURSE_LAYOUT_FILEPATH,
+        CAR_MODEL_CONFIG_FILEPATH,
+        REWARD_CONFIG_FILEPATH,
+    )
+
     if args.play:
         trained_agent = (agent.__class__).load(model_path)
         trained_agent.play(env, 5)
@@ -58,8 +68,6 @@ def main(args):
             import gym      # noqa
             # env = gym.make("Pendulum-v1")
             env = gym.make("BipedalWalker-v3")
-        else:
-            env = Environment(course_layout_filepath)
 
         trained_agent, reward_hist = trainer.train(
             env, agent, max_episodes

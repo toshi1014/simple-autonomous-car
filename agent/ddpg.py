@@ -3,7 +3,7 @@ import random
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from base import Agent, Trainer
+from .base import Agent, Trainer
 
 
 class DDPG(Agent):
@@ -18,7 +18,14 @@ class DDPG(Agent):
         self.target_trans_rate = target_trans_rate
 
     def save(self, model_path):
-        self.actor.save(model_path, overwrite=True, include_optimizer=False)
+        if "actor" in self.__dict__:
+            self.actor.save(
+                model_path,
+                overwrite=True,
+                include_optimizer=False,
+            )
+        else:
+            raise Exception("No model to be saved")
 
     @classmethod
     def load(cls, model_path):
