@@ -33,7 +33,9 @@ class CarModel:
             self.car_model_config = json.load(f)
 
         self.course = course
-        self.position = self.course.course_layout_dict["initial_position"]
+        self.position = copy.deepcopy(
+            self.course.course_layout_dict["initial_position"]
+        )
         self.car_direction = np.deg2rad(
             self.course.course_layout_dict["initial_direction"]
         )
@@ -114,13 +116,6 @@ class Environment:
 
         self.reset()
 
-        # logs
-        self.position_log = [copy.deepcopy(self.car_model.position)]
-        self.speed_log = [self.car_model.speed]
-        self.steering_log = []
-        self.throttle_log = []
-        self.brake_log = []
-
     # wall position & speed
     def state_repr(self):
         return np.concatenate(
@@ -130,6 +125,14 @@ class Environment:
 
     def reset(self):
         self.car_model = CarModel(self.course, self.car_model_config_filepath)
+
+        # logs
+        self.position_log = [copy.deepcopy(self.car_model.position)]
+        self.speed_log = [self.car_model.speed]
+        self.steering_log = []
+        self.throttle_log = []
+        self.brake_log = []
+
         return self.state_repr()
 
     def step(self, action):
@@ -174,9 +177,10 @@ class Environment:
         ax.plot(right_wall_xy_list[:, 0], right_wall_xy_list[:, 1], color="k")
         return ax
 
-    def render(self):
+    def save_log(self, dir, filename):
         # save logs
-        with open("logs.pickle", "wb") as f:
+        filepath = os.path.join(dir, "bin", filename + ".pickle")
+        with open(filepath, "wb") as f:
             obj = {
                 "position_log": self.position_log,
                 "speed_log": self.speed_log,
@@ -226,7 +230,10 @@ class Environment:
         ax4.legend(loc="best", prop={"size": 6})
 
         plt.subplots_adjust(hspace=0.3)
-        plt.savefig("out.png", bbox_inches="tight", pad_inches=0.1)
+
+        filepath = os.path.join(dir, "img", filename + ".png")
+        plt.savefig(filepath, bbox_inches="tight", pad_inches=0.1)
+        plt.close(fig)
 
 
 if __name__ == '__main__':
@@ -257,4 +264,4 @@ if __name__ == '__main__':
         if done:
             print(env.car_model.position)
             break
-    env.render()
+    env.save_log("logs")

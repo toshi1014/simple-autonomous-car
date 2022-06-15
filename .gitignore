@@ -4,3 +4,4 @@ env?
 *.png
 *.pickle
 memo.md
+logs

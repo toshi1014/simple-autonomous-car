@@ -1,4 +1,5 @@
 from collections import namedtuple
+import os
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -28,15 +29,33 @@ class Agent:
         if self.model:
             action = self.actor(np.array([state]), training=False)[0]
 
+            # NOTE: unique to each action range
             if not greedy:
-                action += tf.random.normal(
-                    shape=(self.action_space),
+                steering_noise = tf.random.normal(
+                    shape=((1,)),
                     mean=0.0,
                     stddev=self.noise_stddev,
                 )
+                throttle_noise = tf.random.normal(
+                    shape=((1,)),
+                    mean=1.5,
+                    stddev=self.noise_stddev,
+                )
+                brake_noise = tf.random.normal(
+                    shape=((1,)),
+                    mean=0.0,
+                    stddev=self.noise_stddev,
+                )
+                action += tf.concat([
+                    steering_noise,
+                    throttle_noise,
+                    brake_noise,
+                ], 0)
+
             clipped = tf.clip_by_value(
                 action, self.min_action, self.max_action
             )
+            print(clipped.numpy())
             return clipped.numpy()
         else:
             return self.random_action()
@@ -70,7 +89,7 @@ class Trainer:
     def episode_end(self, agent, episode):
         ...
 
-    def train(self, env, agent, max_episodes):
+    def train(self, env, agent, max_episodes, log_dir):
         reward_hist = []
 
         for episode in range(max_episodes):
@@ -92,6 +111,9 @@ class Trainer:
 
             self.episode_end(agent, episode)
             reward_hist.append(sum_reward)
+
+            if (log_dir is not None) & bool(agent.model):
+                env.save_log(log_dir, f"Episode{episode}")
 
             if episode % 10 == 0:
                 print("Episode", episode)

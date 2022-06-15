@@ -85,6 +85,7 @@ class DDPG(Agent):
         # end critic model
 
         self.model = True
+        print("model initialized")
 
     def update(self, experience_list, discount_rate):
         state_list = np.array([e.state for e in experience_list])
@@ -150,12 +151,12 @@ class DDPGTrainer(Trainer):
         self.batch_size = batch_size
         self.experience_list = deque(maxlen=self.buffer_size)
 
-    def train(self, env, agent, max_episodes):
+    def train(self, env, agent, max_episodes, log_dir=None):
         agent.min_action = env.action_space.low
         agent.max_action = env.action_space.high
         agent.action_space = list(env.action_space.shape)
         agent.random_action = env.action_space.sample
-        reward_hist = super().train(env, agent, max_episodes)
+        reward_hist = super().train(env, agent, max_episodes, log_dir)
         return agent, reward_hist
 
     def step(self, agent, experience):
