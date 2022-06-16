@@ -54,14 +54,14 @@ class Agent:
             clipped = tf.clip_by_value(
                 action, self.min_action, self.max_action
             )
-            print(clipped.numpy())
+            # print(clipped.numpy())
             return clipped.numpy()
         else:
             return self.random_action()
 
-    def play(self, env, episode_cnt):
-        self.min_action = env.action_space.low[0]
-        self.max_action = env.action_space.high[0]
+    def play(self, env, episode_cnt, log_dir):
+        self.min_action = env.action_space.low
+        self.max_action = env.action_space.high
 
         for episode in range(episode_cnt):
             state = env.reset()
@@ -69,11 +69,13 @@ class Agent:
             sum_reward = 0
 
             while not done:
-                env.render()
                 action = self.policy(state, greedy=True)
                 next_state, reward, done, info = env.step(action)
                 sum_reward += reward
                 state = next_state
+
+            if log_dir:
+                env.save_log(log_dir, f"play{episode}")
 
             print(f"Episode {episode}: {sum_reward}")
 

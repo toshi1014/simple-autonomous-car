@@ -21,7 +21,7 @@ batch_size = 64
 noise_stddev = 0.1
 target_trans_rate = 0.005
 model_path = "model.h5"
-max_episodes = 200
+max_episodes = 300
 # end params
 
 
@@ -79,7 +79,7 @@ def main(args):
 
     if args.play:
         trained_agent = (agent.__class__).load(model_path)
-        trained_agent.play(env, 5)
+        trained_agent.play(env, 5, LOG_DIR)
 
     else:
         if args.test:
