@@ -7,9 +7,6 @@ import numpy as np
 from .course import Course
 
 
-MAX_STEP = 30
-
-
 class ActionSpace:
     def __init__(self, bound_list):
         self.low = np.array(
@@ -170,7 +167,7 @@ class Environment:
         self.throttle_log.append(throttle)
         self.brake_log.append(brake)
 
-        if len(self.position_log) > MAX_STEP:
+        if len(self.position_log) > self.course.course_layout_dict["max_step"]:
             done = True
 
         return self.state_repr(), reward, done, info
