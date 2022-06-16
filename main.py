@@ -6,7 +6,7 @@ from agent import Agent, Trainer
 from environment import Environment
 
 
-COURSE_LAYOUT_FILEPATH = "course_layout.json"
+COURSE_LAYOUT_FILEPATH = "course_layout2.json"
 CAR_MODEL_CONFIG_FILEPATH = "config/car_model_config.json"
 REWARD_CONFIG_FILEPATH = "config/reward_config.json"
 LOG_DIR = "logs"
@@ -21,7 +21,7 @@ batch_size = 64
 noise_stddev = 0.1
 target_trans_rate = 0.005
 model_path = "model.h5"
-max_episodes = 300
+max_episodes = 500
 # end params
 
 

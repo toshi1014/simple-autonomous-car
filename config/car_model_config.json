@@ -2,7 +2,7 @@
     "max_steering_angle": 30,
     "acceleration_g": 1,
     "deceleration_g": 1,
-    "lidar_range": 3,
+    "lidar_range": 5,
     "sensor_directions": [
         -45,
         -20,

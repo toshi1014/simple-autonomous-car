@@ -37,8 +37,8 @@ class Agent:
                 )
                 throttle_noise = tf.random.normal(
                     shape=((1,)),
-                    mean=0.3,
-                    stddev=self.noise_stddev,
+                    mean=0.0,
+                    stddev=0.3,
                 )
                 brake_noise = tf.random.normal(
                     shape=((1,)),

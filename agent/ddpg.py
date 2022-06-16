@@ -46,10 +46,14 @@ class DDPG(Agent):
             units=512,
             activation=tf.nn.relu,
         )(dense1)
+        dense3 = keras.layers.Dense(
+            units=512,
+            activation=tf.nn.relu,
+        )(dense2)
         output = keras.layers.Dense(
             units=self.action_space[0],
             activation=tf.nn.tanh,
-        )(dense2)
+        )(dense3)
 
         self.actor = keras.Model(inputs=input, outputs=output)
         self.actor.compile(optimizer=keras.optimizers.Adam(
