@@ -95,11 +95,8 @@ class Course:
         return False
 
     def apply_track_limits(self, pre_position, position):
-        bool_off_limits = self.in_off_limits_area(position)
-        bool_is_goal = self.is_goal(position)
-
-        if bool_off_limits | bool_is_goal:
-            return position, bool_off_limits, bool_is_goal
+        if self.in_off_limits_area(position):
+            return position, True, False
 
         move_eqn = self.get_line_eqn(pre_position, position)
 
@@ -122,7 +119,10 @@ class Course:
                         intersection_list.append(intersection)
 
         if len(distance_list) == 0:
-            return position, False, False
+            if self.is_goal(position):
+                return position, False, True
+            else:
+                return position, False, False
         else:
             min_distance_idx = distance_list.index(min(distance_list))
             return intersection_list[min_distance_idx], True, False

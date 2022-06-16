@@ -1,5 +1,4 @@
 from collections import namedtuple
-import os
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -38,7 +37,7 @@ class Agent:
                 )
                 throttle_noise = tf.random.normal(
                     shape=((1,)),
-                    mean=1.5,
+                    mean=0.3,
                     stddev=self.noise_stddev,
                 )
                 brake_noise = tf.random.normal(

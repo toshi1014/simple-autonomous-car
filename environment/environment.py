@@ -43,7 +43,7 @@ class CarModel:
             self.car_model_config["max_steering_angle"]
         )
 
-        self.speed = 0      # TODO: random initial speed
+        self.speed = 0.0      # TODO: random initial speed
         self.sensor_direction_list = [
             np.deg2rad(sd)
             for sd in self.car_model_config["sensor_directions"]
@@ -67,11 +67,14 @@ class CarModel:
                 self.course.apply_track_limits(
                     pre_position, self.position
                 )
+            distance_gain = Course.get_distance(
+                None, pre_position, self.position
+            )
 
-            return bool_off_limits, bool_goal
+            return bool_off_limits, bool_goal, distance_gain
 
         else:
-            return False, False
+            return False, False, False
 
     def update_speed(self, throttle, brake):
         self.speed += throttle * self.car_model_config["acceleration_g"] \
@@ -139,7 +142,8 @@ class Environment:
         steering, throttle, brake = action
 
         bool_throttle_with_brake = self.car_model.update_speed(throttle, brake)
-        bool_off_limits, bool_goal = self.car_model.update_position(steering)
+        bool_off_limits, bool_goal, distance_gain = \
+            self.car_model.update_position(steering)
 
         if bool_goal:
             reward = self.reward_config["goal_reward"]
@@ -150,6 +154,8 @@ class Environment:
                 reward = self.reward_config["throttle_with_brake_penalty"]
             else:
                 reward = self.reward_config["default_reward"]
+
+        reward += distance_gain * self.reward_config["distance_reward"]
 
         done = bool_off_limits | bool_goal
         info = None
@@ -208,14 +214,16 @@ class Environment:
 
         # steering log
         ax3 = fig.add_subplot(2, 2, 3)
-        ax3.plot(list(range(len(self.steering_log))), self.steering_log)
         ax3.hlines(0, 0, len(self.steering_log), color="k", linestyle="--")
         ax3.hlines(1, 0, len(self.steering_log), color="k", linestyle="-")
         ax3.hlines(-1, 0, len(self.steering_log), color="k", linestyle="-")
+        ax3.plot(list(range(len(self.steering_log))), self.steering_log)
         ax3.set_title("Steering")
 
         # throttle & brake log
         ax4 = fig.add_subplot(2, 2, 4)
+        ax4.hlines(0, 0, len(self.steering_log), color="k", linestyle="-")
+        ax4.hlines(1, 0, len(self.steering_log), color="k", linestyle="-")
         ax4.plot(
             list(range(len(self.throttle_log))), self.throttle_log,
             label="Throttle", color="red"
@@ -224,8 +232,6 @@ class Environment:
             list(range(len(self.brake_log))), self.brake_log,
             label="Brake", color="blue"
         )
-        ax4.hlines(0, 0, len(self.steering_log), color="k", linestyle="-")
-        ax4.hlines(1, 0, len(self.steering_log), color="k", linestyle="-")
         ax4.set_title("Throttle & Brake")
         ax4.legend(loc="best", prop={"size": 6})
 
@@ -264,4 +270,4 @@ if __name__ == '__main__':
         if done:
             print(env.car_model.position)
             break
-    env.save_log("logs")
+    env.save_log("logs", "logs")

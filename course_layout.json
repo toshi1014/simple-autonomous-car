@@ -18,8 +18,8 @@
     ],
     "goal_area": {
         "x": {
-            "min": 3.5,
-            "max": 4.5
+            "min": 2.0,
+            "max": "inf"
         },
         "y": {
             "min": "-inf",
