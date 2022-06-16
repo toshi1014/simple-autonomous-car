@@ -1,6 +1,7 @@
 from collections import namedtuple
 import copy
 import json
+import math
 import numpy as np
 
 
@@ -20,9 +21,9 @@ class Course:
         vec_x = p2["x"] - p1["x"]
         vec_y = p2["y"] - p1["y"]
 
-        if vec_x == 0:
+        if math.isclose(vec_x, 0):
             return LineEqn(1, 0, -p1["x"])
-        elif vec_y == 0:
+        elif math.isclose(vec_y, 0):
             return LineEqn(0, 1, -p1["y"])
         else:
             a = vec_y / vec_x
@@ -55,7 +56,9 @@ class Course:
                 })
 
     def within_range(self, min, target, max):
-        return min <= target <= max
+        return (min <= target <= max) \
+            | math.isclose(min, target) \
+            | math.isclose(max, target)
 
     def in_area(self, position, area):
         return self.within_range(
