@@ -59,25 +59,24 @@ class Agent:
         else:
             return self.random_action()
 
-    def play(self, env, episode_cnt, log_dir):
+    def play(self, env, log_dir):
         self.min_action = env.action_space.low
         self.max_action = env.action_space.high
 
-        for episode in range(episode_cnt):
-            state = env.reset()
-            done = False
-            sum_reward = 0
+        state = env.reset()
+        done = False
+        sum_reward = 0
 
-            while not done:
-                action = self.policy(state, greedy=True)
-                next_state, reward, done, info = env.step(action)
-                sum_reward += reward
-                state = next_state
+        while not done:
+            action = self.policy(state, greedy=True)
+            next_state, reward, done, info = env.step(action)
+            sum_reward += reward
+            state = next_state
 
-            if log_dir:
-                env.save_log(log_dir, f"play{episode}")
+        if log_dir:
+            env.save_log(log_dir, "play")
 
-            print(f"Episode {episode}: {sum_reward}")
+        print(f"reward: {sum_reward}")
 
 
 class Trainer:

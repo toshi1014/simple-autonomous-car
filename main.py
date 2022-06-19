@@ -6,9 +6,9 @@ from agent import Agent, Trainer
 from environment import Environment
 
 
-COURSE_LAYOUT_FILEPATH = "course_layout2.json"
-CAR_MODEL_CONFIG_FILEPATH = "config/car_model_config.json"
-REWARD_CONFIG_FILEPATH = "config/reward_config.json"
+COURSE_LAYOUT_FILEPATH = os.path.join("course_layouts", "course_layout2.json")
+CAR_MODEL_CONFIG_FILEPATH = os.path.join("config", "car_model_config.json")
+REWARD_CONFIG_FILEPATH = os.path.join("config", "reward_config.json")
 LOG_DIR = "logs"
 
 
@@ -60,8 +60,9 @@ def get_args():
 
 
 def main(args):
+    global LOG_DIR
+
     if args.log:
-        global LOG_DIR
         if os.path.exists(LOG_DIR):
             shutil.rmtree(LOG_DIR)
 
@@ -79,7 +80,7 @@ def main(args):
 
     if args.play:
         trained_agent = (agent.__class__).load(model_path)
-        trained_agent.play(env, 5, LOG_DIR)
+        trained_agent.play(env, LOG_DIR)
 
     else:
         if args.test:
