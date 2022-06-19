@@ -5,3 +5,4 @@ env?
 *.pickle
 memo.md
 logs
+*.log
