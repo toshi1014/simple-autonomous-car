@@ -2,6 +2,7 @@ __pycache__
 env?
 *.h5
 *.png
+!/docs/*.png
 *.pickle
 memo.md
 logs
