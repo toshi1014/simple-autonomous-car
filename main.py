@@ -21,7 +21,7 @@ batch_size = 64
 noise_stddev = 0.1
 target_trans_rate = 0.005
 model_path = "model.h5"
-max_episodes = 500
+max_episodes = 400
 # end params
 
 
@@ -46,15 +46,10 @@ def get_args():
         "--play", help="play agent", action="store_true",
     )
     parser.add_argument(
-        "--test", help="test agent in OpenAI Gym", action="store_true",
-    )
-    parser.add_argument(
         "--log", help="save logs", action="store_true",
     )
 
     args = parser.parse_args()
-    if args.play & args.test:
-        raise Exception("No play opt for test agent")
 
     return args
 
@@ -83,11 +78,6 @@ def main(args):
         trained_agent.play(env, LOG_DIR)
 
     else:
-        if args.test:
-            import gym      # noqa
-            env = gym.make("Pendulum-v1")
-            # env = gym.make("BipedalWalker-v3")
-
         trained_agent, reward_hist = trainer.train(
             env, agent, max_episodes, LOG_DIR
         )

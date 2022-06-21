@@ -1,7 +1,7 @@
 {
-    "goal_reward": 1,
-    "default_reward": -10.0,
-    "off_limits_penalty": -30,
-    "throttle_with_brake_penalty": -5.0,
-    "distance_reward": 20.0
+    "goal_reward": 0.1,
+    "default_reward": -1.5,
+    "off_limits_penalty": -3,
+    "throttle_with_brake_penalty": 0,
+    "distance_reward": 5.0
 }

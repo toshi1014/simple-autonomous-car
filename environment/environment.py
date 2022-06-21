@@ -82,7 +82,7 @@ class CarModel:
 
         self.speed = max(self.speed, 0)
 
-        return bool((throttle * brake) > 0)
+        return abs(throttle - brake)
 
     def lidar_detection(self):
         wall_distance_list = []
@@ -141,21 +141,22 @@ class Environment:
     def step(self, action):
         steering, throttle, brake = action
 
-        bool_throttle_with_brake = self.car_model.update_speed(throttle, brake)
+        pedal_force_diff = self.car_model.update_speed(throttle, brake)
         bool_off_limits, bool_goal, distance_gain = \
             self.car_model.update_position(steering)
 
-        if bool_goal:
-            reward = self.reward_config["goal_reward"]
-        else:
-            if bool_off_limits:
-                reward = self.reward_config["off_limits_penalty"]
-            elif bool_throttle_with_brake:
-                reward = self.reward_config["throttle_with_brake_penalty"]
-            else:
-                reward = self.reward_config["default_reward"]
+        reward = self.reward_config["throttle_with_brake_penalty"] * \
+            pedal_force_diff
 
-        reward += distance_gain * self.reward_config["distance_reward"]
+        if bool_off_limits:
+            reward += self.reward_config["off_limits_penalty"]
+        else:
+            if bool_goal:
+                reward += self.reward_config["goal_reward"]
+            else:
+                reward += self.reward_config["default_reward"]
+
+            reward += distance_gain * self.reward_config["distance_reward"]
 
         done = bool_off_limits | bool_goal
         info = None
